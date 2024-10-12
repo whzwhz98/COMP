@@ -1,0 +1,327 @@
+
+#include <fstream>
+#include <string>
+#include <iostream>
+#include <vector>
+using namespace std;
+unsigned int mm = 0;
+
+struct IntraType
+{
+    string srcId;
+    string dstId;
+    unsigned int srcNum;
+    unsigned int dstNum;
+    unsigned int srcType;
+    unsigned int dstType;
+};
+
+struct Group
+{
+    string wssd;
+    string wssm;
+    string osc;
+    unsigned int dir;
+    unsigned int type;
+};
+
+struct WssConnect
+{
+     int local_port;
+     int relate_neid;
+     int relate_rackid;
+     int relate_gid;
+     int relate_group;
+     int relate_port;
+};
+
+int num = 0;
+
+vector< IntraType> intratypes;
+vector< Group> groups;
+WssConnect wssconnect;
+vector< WssConnect> wssconnects;
+vector<string> m_dealSets;
+bool beginSave;
+
+int relateType;
+
+unsigned int neid = 1;
+unsigned int rackid = 5;
+unsigned int gid = 1;
+
+unsigned int next_neid = 0;
+unsigned int next_rackid = 0;
+unsigned int next_gid = 0;
+
+string GetVaildStr(const string& line)
+ {
+        int begin = line.find("<");
+        int end = line.find(">");
+        return line.substr(begin, end);
+ }
+std::vector<std::string> SplitWithStr(const std::string& str, const std::string& pattern)
+{
+    std::vector<std::string> resVec;
+
+    if ("" == str)
+    {
+        return resVec;
+    }
+    //方便截取最后一段数据
+    std::string strs = str + pattern;
+
+    size_t pos = strs.find(pattern);
+    size_t size = strs.size();
+
+    while (pos != std::string::npos)
+    {
+        std::string x = strs.substr(0, pos);
+        resVec.push_back(x);
+        strs = strs.substr(pos + 1, size);
+        pos = strs.find(pattern);
+    }
+
+    return resVec;
+}
+
+bool ContainStr(const std::string& str, const std::string& substr)
+{
+    int pos = str.find(substr);
+    return pos != std::string::npos;
+}
+
+void FillWssGroups( string mm_dealSets)
+{
+    IntraType intra_type;
+    Group group;
+
+    vector<string> dealStrings = SplitWithStr(mm_dealSets, " ");
+
+        int flag = 0;
+        int intra_flag = 0;
+        for (size_t i = 0; i < dealStrings.size(); ++i)
+        {
+            string& dealStr1 = dealStrings[i];
+            //cout << dealStr1 << endl;
+            if (ContainStr(dealStr1, "srcId"))
+            {
+                unsigned int begin = dealStr1.find_first_of("\"");
+                unsigned int end = dealStr1.find_last_of("\"");
+                string rlt = dealStr1.substr(begin + 1, end - begin - 1);
+                intra_type.srcId = rlt;
+            }
+            else if (ContainStr(dealStr1, "dstId"))
+            {
+                unsigned int begin = dealStr1.find_first_of("\"");
+                unsigned int end = dealStr1.find_last_of("\"");
+                string rlt = dealStr1.substr(begin + 1, end - begin - 1);
+                intra_type.dstId = rlt;
+            }
+            else if (ContainStr(dealStr1, "dstNum"))
+            {
+                unsigned int begin = dealStr1.find_first_of("\"");
+                unsigned int end = dealStr1.find_last_of("\"");
+                string rlt = dealStr1.substr(begin + 1, end - begin - 1);
+                intra_type.dstNum = atoi(rlt.c_str());
+            }
+            else if (ContainStr(dealStr1, "srcNum"))
+            {
+                unsigned int begin = dealStr1.find_first_of("\"");
+                unsigned int end = dealStr1.find_last_of("\"");
+                string rlt = dealStr1.substr(begin + 1, end - begin - 1);
+                intra_type.srcNum = atoi(rlt.c_str());
+            }
+            else if (ContainStr(dealStr1, "srcType"))
+            {
+                unsigned int begin = dealStr1.find_first_of("\"");
+                unsigned int end = dealStr1.find_last_of("\"");
+                string rlt = dealStr1.substr(begin + 1, end - begin - 1);
+                intra_type.srcType = atoi(rlt.c_str());
+            }
+            else if (ContainStr(dealStr1, "dstType"))
+            {
+                unsigned int begin = dealStr1.find_first_of("\"");
+                unsigned int end = dealStr1.find_last_of("\"");
+                string rlt = dealStr1.substr(begin + 1, end - begin - 1);
+                intra_type.dstType = atoi(rlt.c_str());
+            }
+            else if (ContainStr(dealStr1, "wssd"))
+            {
+                unsigned int begin = dealStr1.find_first_of("\"");
+                unsigned int end = dealStr1.find_last_of("\"");
+                string rlt = dealStr1.substr(begin + 1, end - begin - 1);
+                group.wssd = rlt;
+            }
+            else if (ContainStr(dealStr1, "wssm"))
+            {
+                unsigned int begin = dealStr1.find_first_of("\"");
+                unsigned int end = dealStr1.find_last_of("\"");
+                string rlt = dealStr1.substr(begin + 1, end - begin - 1);
+                group.wssm = rlt;
+            }
+            else if (ContainStr(dealStr1, "osc"))
+            {
+                unsigned int begin = dealStr1.find_first_of("\"");
+                unsigned int end = dealStr1.find_last_of("\"");
+                string rlt = dealStr1.substr(begin + 1, end - begin - 1);
+                group.osc = rlt;
+            }
+            else if (ContainStr(dealStr1, "dir"))
+            {
+                unsigned int begin = dealStr1.find_first_of("\"");
+                unsigned int end = dealStr1.find_last_of("\"");
+                string rlt = dealStr1.substr(begin + 1, end - begin - 1);
+                group.dir = atoi(rlt.c_str());
+            }
+            /*
+            cout << "group.wssd:"<<group.wssd << endl;
+            cout << "group.wssm:" << group.wssm << endl;
+            cout << "group.osc:" << group.osc << endl;
+            cout << "group.dir:" << group.dir << endl;
+
+            cout << "intra_type.srcId:" << intra_type.srcId << endl;
+            cout << "intra_type.srcNum" <<intra_type.srcNum << endl;
+            cout << "intra_type.srcType" << intra_type.srcType << endl;
+            cout << "intra_type.dstId" << intra_type.dstId << endl;
+            cout << "intra_type.dstNum" << intra_type.dstNum << endl;
+            cout << "intra_type.dstType" << intra_type.dstType << endl;
+            */
+        }
+
+        if (group.wssm.size() == 3)
+        {
+            //char m = gid;
+            //char n = rackid)
+            int m;
+            cout << group.wssm[0] << group.wssm[2] << endl;
+            if ((group.wssm[0] == (gid + 48)) && (group.wssm[2] == (rackid + 48)))
+            {
+                //m = 40;
+                wssconnect.local_port = 40;
+                if( (int)(group.osc[2]) <= 57)
+                {
+                    wssconnect.relate_gid = (int)(group.osc[2]) - 48;
+                }
+                else
+                {
+                    wssconnect.relate_gid = (int)(group.osc[2]) - 87;
+                }
+                wssconnect.relate_neid = neid;
+                wssconnect.relate_rackid = (int)(group.osc[0])- 48;
+                wssconnects.push_back(wssconnect);
+                //num++;
+            }
+        }
+
+        if (intra_type.srcId.size() > 3)
+        {
+            cout << intra_type.srcId[6] << intra_type.srcId[3] << endl;
+            if ((intra_type.srcId[6]== (gid + 47)) && ((intra_type.srcId[3] == (rackid + 48))))
+            {
+                wssconnect.local_port = intra_type.srcNum;
+                if ((int)(intra_type.dstId[6]) <= 57)
+                {
+                    wssconnect.relate_gid = (int)(intra_type.dstId[6]) - 48;
+                }
+                else
+                {
+                    wssconnect.relate_gid = (int)(intra_type.dstId[6]) - 87;
+                }
+                wssconnect.relate_neid = neid;
+                wssconnect.relate_rackid = (int)(intra_type.dstId[3]) - 48;
+                wssconnects.push_back(wssconnect);
+                //num++;
+            }
+        }
+}
+int Find_Neid(string dealSet)
+{
+    int nenumSave = 0;
+    vector<string> dealStrings = SplitWithStr(dealSet, " ");
+
+    for (size_t i = 0; i < dealStrings.size(); ++i)
+    {
+        string& dealStr = dealStrings[i];
+        if (ContainStr(dealStr, "netNum"))
+        {
+            int netnum = 0;
+            unsigned int begin = dealStr.find_first_of("\"");
+            unsigned int end = dealStr.find_last_of("\"");
+            string rlt = dealStr.substr(begin + 1, end - begin - 1);
+            netnum = atoi(rlt.c_str());
+            if (netnum == 2)
+            {
+                nenumSave = 1;
+                return nenumSave;
+            }
+        }
+    }
+    return nenumSave;
+}
+void GetWssGroups()
+{
+    for (size_t i = 0; i < m_dealSets.size(); ++i) {
+        //vector<string> dealStrings = SplitWithStr(m_dealSets[i], " ");
+       // cout << m_dealSets[i] << endl;
+
+            FillWssGroups(m_dealSets[i]);
+
+    }
+}
+void ParseLine(const string& line)
+{ 
+    int ret = 0;
+       // cout << line << endl;
+        if (line.find("oadm nodeId") != string::npos) {
+
+            m_dealSets.clear();
+            ret = Find_Neid(line);
+
+            if (ret == 1)
+            {
+                m_dealSets.push_back(GetVaildStr(line));
+                beginSave = true;
+            }
+            else
+            {
+                beginSave = false;
+            }
+        }
+        else if (line.find("</oadm>") != string::npos) {
+                
+                GetWssGroups();
+
+            beginSave = false;
+        }
+        else {
+            if (beginSave) {
+                m_dealSets.push_back(GetVaildStr(line));
+            }
+        }
+ }
+
+
+int main()
+{
+    //XmlParser parser;
+    //parser.Parse("555.xml");
+
+    ifstream in("555.xml");
+    string line;
+    while (getline(in, line))
+    {
+        ParseLine(line);
+    }
+
+    cout << wssconnects.size() << endl;
+    for (int i = 0;i < wssconnects.size();i++)
+    {
+        cout << "local_port:" << wssconnects[i].local_port << endl;
+        cout << "relate_neid:" << wssconnects[i].relate_neid << endl;
+        cout << "relate_rackid:" << wssconnects[i].relate_rackid << endl;
+        cout << "relate_gid:" << wssconnects[i].relate_gid << endl;
+        cout << "relate_port:" << wssconnects[i].relate_port << endl;
+    }
+    return 0;
+}
